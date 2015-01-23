@@ -1,14 +1,26 @@
 # Functional Shell (draft)
 
+Anti-design goals:
+
+- Avoid painful shell filtering. ie in order to extract a pid or get the size of a volume
+
+    ps -ef | grep XYZ | awk '{ print $2 }'
+    
+    space=`df -h | awk '{print $5}' | grep % | grep -v Use | sort -n | tail -1 | cut -d "%" -f1 -`
+
+- Avoid medieval control flow constructs
+
+    if [ "$num" -gt "150" ]
+    
+
 Design goals: mainly be what a modern shell should be
 
-- Keep a minimum compatibility layer, so that users used to traditional shell can still use their basic commands as usual
-- Have a functional scripting language more robust and easier to program than the shell's.
-- The script language are familiar to mainstream c-based languages developer (Java, C#, Javascript, C++)
-- Provides tooling for easily do system operation (start commands, manage processes, manage services)
-- Provides all means for advanced scripting, by providing support for clean syntax and runtime errors, temporary files and directory, temporary and permanent storage (for basic key-value structures), PID and single-instance running of commands and functions, integrated internet protocols support natively available.
+- Keep a minimum compatibility layer, so that users used to a traditional shell can still use their basic commands as usual
+- Have a functional and familiar scripting language more robust and easier than the shell's.
+- Provides tooling for easy system operations (start commands, manage processes, manage services)
+- Advanced scripting with support for clean syntax and runtime errors, temporary files and directory, temporary and permanent storage (for basic key-value structures), PID and single-instance running of commands and functions, integrated internet protocols support natively available.
 - Advanced command completion, and filesystem browsing
-- Native support for data structure (xml, json, csv), with look up, walking, filters, and creation functions.
+- Native support for complex data structure (xml, json, csv), with look up, walking, filters, and creation functions.
 
 ## Compatibility with traditional shells
 
@@ -16,7 +28,7 @@ Design goals: mainly be what a modern shell should be
     echo "test" $PORT | cat >file
     apache -f /file &
     
-Any line not starting with a reserver command keyword is a traditional shell command (with some limitations).
+Any line not starting with a reserved command keyword or literal is a traditional shell command (with some limitations).
 
 ## Special constructs
 
@@ -41,7 +53,7 @@ Background jobs are managed via promises, with a literal form [command].
 
 However, the promise form provides additional possibilities
 
-    [mycommand -v myoptions].pipe(cat >myfile)
+    [mycommand -v myoptions].pipe(grep XYZ)
     [mycommand -v myoptions].output.split("\n").filter((x) -> x != "").pipe(cat);
     [mycommand -v myoptions].output.split("\n").filter((x) -> x != "") | cat
     
@@ -49,7 +61,7 @@ Methods of a Promise object are either streamed or blocking.
 
     [mycommand].errorCode # blocking until the errorCode is available    
     [mycommand].output    # blocking until the full command output is available
-    [mycommand].stream(cat) # streams the output of background job to the command cat
+    [mycommand].stream(grep XYZ) # streams the output of background job to the command grep
 
 In the following example, the shell starts two commands as background jobs (mycommand
 and othercommand), and pipes the ouput of mycommand to the input stream of othercommand).
@@ -100,25 +112,20 @@ Most of the predefined commands are in their own Object, acting as private names
 - Array: a type for arrays
 - Table: a type for tables of typed data
 - Function: a type for functions
-- Class: a type for classes
+- Class?: a type for classes
 - URL: a type for URL objects
 - Promise: for asynchronous execution of commands or functions
 
 #### Examples
 
-    var httpReq = URL.get("http://www.example.com/test"); # renvoie une promesse
-    var res = httpReq.result  # bloque et renvoie le résultat
-    var res = http.on(URL.SUCCESS, (data) -> echo data)
-    
 Note the strong typing:
 
     # Error: URL.on() expects an enum {URL.SUCCESS ou URL_FAIL) as first parameter
-    URL.on("une string", (data) -> echo data) 
+    URL.on("foobar", (data) -> echo data) 
 
 Some functions return promises
 
     var httpReq = URL.get("http://www.example.com/test"); # httpReq is a promise
     var res = httpReq.result  # blocks and returns the result
     var res = http.on(URL.SUCCESS, (data) -> echo data) # also with events
-
 
